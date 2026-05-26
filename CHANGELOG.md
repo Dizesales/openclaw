@@ -134,6 +134,7 @@ Docs: https://docs.openclaw.ai
 
 - Gateway: require Talk secret authority before setup-code handoff can include Talk secrets. (#85690) Thanks @ngutman.
 - Agents: keep fallback error reporting scoped to the active model candidate so stale prior-provider quota/auth text is not reported for later fallback attempts. (#86134) thanks @zhangguiping-xydt.
+- Control UI: clear stale exec/plugin approval prompts after they are resolved elsewhere or expire, and keep Escape/backdrop from submitting hidden Deny decisions. (#86270) Thanks @jesse-merhi.
 
 ## 2026.5.25
 
