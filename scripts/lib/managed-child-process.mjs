@@ -103,6 +103,11 @@ export async function runManagedCommand({
         if (managedChild.forceKillTimer) {
           clearTimeout(managedChild.forceKillTimer);
         }
+        // A successful wrapper exit does not prove its process group is empty.
+        // Reap detached backends before reporting the managed command complete.
+        if (managedChild.receivedSignal || platform !== "win32") {
+          terminateManagedChild(child, "SIGKILL");
+        }
         resolve(
           managedChild.receivedSignal
             ? signalExitCode(managedChild.receivedSignal)
