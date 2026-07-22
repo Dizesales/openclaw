@@ -117,6 +117,41 @@ describe("managed-child-process", () => {
     }
   });
 
+  posixIt("reaps descendants after a successful wrapper exit", async () => {
+    const dir = createTempDir("openclaw-managed-descendant-");
+    const descendantPidPath = path.join(dir, "descendant.pid");
+    const parentScript = `
+import { spawn } from "node:child_process";
+import fs from "node:fs";
+
+const descendant = spawn(process.execPath, [
+  "-e",
+  "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000);",
+], { stdio: "ignore" });
+fs.writeFileSync(process.argv[1], String(descendant.pid));
+descendant.unref();
+`;
+    let descendantPid = 0;
+
+    try {
+      const status = await runManagedCommand({
+        args: ["--input-type=module", "-e", parentScript, descendantPidPath],
+        bin: process.execPath,
+        shell: false,
+        stdio: "ignore",
+      });
+      descendantPid = Number(fs.readFileSync(descendantPidPath, "utf8"));
+
+      expect(status).toBe(0);
+      expect(Number.isInteger(descendantPid)).toBe(true);
+      await waitFor(() => !isProcessAlive(descendantPid), 1_500);
+    } finally {
+      if (descendantPid && isProcessAlive(descendantPid)) {
+        process.kill(descendantPid, "SIGKILL");
+      }
+    }
+  });
+
   posixIt("kills the managed child process group when the runner is terminated", async () => {
     const dir = createTempDir("openclaw-managed-child-");
     const childPath = path.join(dir, "child.mjs");
